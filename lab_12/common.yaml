@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab12-dp # Deployment
+  labels:
+    app: lab12
+spec:
+  replicas: 2 # ReplicaSet
+  # selector indicates how ReplicaSet finds which Pods to manage
+  # select a label that is defined in the Pod template
+  # However, more sophisticated selection rules are possible
+  selector:
+    matchLabels:
+      app: lab12
+  template: # Pods
+    metadata:
+      labels:
+        app: lab12
+    # spec indicates that the Pods run one container, lab12,
+    # which runs the ri156856/lesson-10 Docker Hub image at version v.01
+    spec:
+      # Create one container and name it lab12
+      # using the .spec.template.spec.containers[0].name field.
+      containers:
+        - name: lab12
+          image: ri156856/lesson-10:v.01
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab12-svc
+spec:
+  selector:
+    app: lab12
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8080
+  type: NodePort # Change from ClusterIP to NodePort
+  # Optional: Specify nodePort to ensure the same port number each time
+  # nodePort: 32000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lab12-ingress
+  namespace: default
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: arch.homework
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lab12-svc
+                port:
+                  number: 8000
